@@ -2,7 +2,7 @@
 
 # Custom IoT Agent for sakura.io
 
-![FIWARE IoT Agents](https://nexus.lab.fiware.org/repository/raw/public/badges/chapters/iot-agents.svg)]
+![FIWARE IoT Agents](https://nexus.lab.fiware.org/repository/raw/public/badges/chapters/iot-agents.svg)
 [![License: APGL](https://img.shields.io/github/license/lets-fiware/custom-iotagent-sakuraio.svg)](https://opensource.org/licenses/AGPL-3.0)
 [![NGSI v2](https://img.shields.io/badge/NGSI-v2-5dc0cf.svg)](https://fiware-ges.github.io/orion/api/v2/stable/)
 
@@ -21,6 +21,7 @@ with WebSocket. It is based on the [IoT Agent Node.js Library](https://github.co
     -   [Make attributes on IoT Agent](#make-attributes-on-iot-agent)
 -   [How to build a docker container image](#how-to-build-a-docker-container-image)
 -   [How to run](#how-to-run)
+-   [Iot Device](#iot-device)
 -   [About sakura.io](#about-sakuraio)
     -   [Reference](#reference)
 -   [Third-party library](#third-party-library)
@@ -203,7 +204,7 @@ cd docker
 make build
 ```
 
-The `iot-agent` container is driven by environment variables as shown:
+The IoT Agent container is driven by environment variables as shown:
 
 | Key                   | Value                   | Description                                                                                                                                           |
 | --------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -244,7 +245,7 @@ services:
         volumes:
             - ./data/mongo-data:/data/db
 
-    iotagent:
+    iot-agent:
         image: fisuda/custom-iot-agent-sakuraio:latest
         ports:
             - 4041:4041
@@ -266,6 +267,12 @@ services:
             # - IOTA_DEVICE_REGISTRY_DURATION=P1M
             # - IOTA_DEFAULT_TYPE=Thing
 ```
+
+## IoT Device
+
+The source code of the IoT device that supports this IoT Agent is [here](https://github.com/lets-fiware/fiware-sakuraio)
+(FIWARE-sakuraio - Github).
+
 
 ## About sakura.io
 
