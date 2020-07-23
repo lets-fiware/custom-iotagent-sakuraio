@@ -1,0 +1,64 @@
+#!/usr/bin/env node
+
+/*
+ * Copyright (c) 2020 Kazuhito Suda
+ *
+ * This file is part of custom-iotagent-sakuraio
+ *
+ * https://github.com/lets-fiware/custom-iotagent-sakuraio
+ *
+ * custom-iotagent-sakuraio is free software: you can redistribute it and/or
+ * modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version.
+ *
+ * custom-iotagent-sakuraio is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public
+ * License along with custom-iotagent-sakuraio.
+ * If not, see http://www.gnu.org/licenses/.
+ *
+ */
+'use strict';
+
+const iotAgent = require('../lib/iotagent-sakuraio'),
+    iotAgentLib = require('iotagent-node-lib'),
+    info = require('../package.json'),
+    context = {
+        op: 'IoTAgentSakuraio.Executable'
+    },
+    logger = require('logops');
+
+process.on('SIGTERM', () => {
+    logger.info(context, 'Got SIGTERM');
+
+    iotAgent.stop(function (error) {
+        let code = 1;
+        if (error) {
+            logger.error(context, 'Error stopping IoT Agent for sakura.io: [%s] Exiting process', error);
+        } else {
+            logger.info(context, 'IoT Agent for sakura.io stopped');
+            code = 0;
+        }
+        process.exit(code);
+    });
+});
+
+function start() {
+    var config = require('../config');
+
+    config.iotaVersion = info.version;
+
+    iotAgent.start(config, function (error) {
+        if (error) {
+            logger.error(context, 'Error starting IoT Agent for sakura.io: [%s] Exiting process', error);
+        } else {
+            logger.info(context, 'IoT Agent for sakura.io started');
+        }
+    });
+}
+
+start();

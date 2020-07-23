@@ -1,0 +1,202 @@
+/*
+ * Copyright (c) 2020 Kazuhito Suda
+ *
+ * This file is part of custom-iotagent-sakuraio
+ *
+ * https://github.com/lets-fiware/custom-iotagent-sakuraio
+ *
+ * custom-iotagent-sakuraio is free software: you can redistribute it and/or
+ * modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version.
+ *
+ * custom-iotagent-sakuraio is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public
+ * License along with custom-iotagent-sakuraio.
+ * If not, see http://www.gnu.org/licenses/.
+ *
+ */
+'use strict';
+
+const iotAgentLib = require('iotagent-node-lib'),
+    config = require('../config'),
+    WebSocket = require('ws'),
+    {TextDecoder} = require("util");
+
+const context = {
+    op: 'IoTAgentSakuraio.Agent'
+};
+const ws = new WebSocket(config.websocket);
+
+function initSouthbound(callback) {
+    iotAgentLib.logModule.info(context, 'initSouthbound');
+
+    ws.on('open', function () {
+        iotAgentLib.logModule.info(context, 'Connected to sakura.io');
+        callback();
+    });
+}
+
+ws.on('message', function (data) {
+    try {
+        iotAgentLib.logModule.debug(context,`${data}`);
+
+        data = JSON.parse(data);
+        const payload = data.payload;
+
+        switch (data.type) {
+            case 'channels':
+                // deocde 'ul over channels' to 'ul'
+                let hex = '';
+                for (let i = 0; i < payload.channels.length; i++) {
+                    if (payload.channels[i].channel == 0) {
+                        hex = '';
+                    }
+                    hex +=  payload.channels[i].value;
+                }
+                const bin = Uint8Array.from(Buffer.from(hex, "hex"));
+                const index = bin.indexOf(0);
+                const ul = new TextDecoder().decode((index == -1) ? bin : bin.subarray(0, index));
+
+                iotAgentLib.logModule.debug(context,`${ul}`);
+
+                const query = {
+                    i : data.module,                    // device ID
+                    k : ul.slice(0, ul.indexOf('?')),   // API key
+                    d : ul.slice(ul.indexOf('?') + 1),  // Ultralight payload
+                    t: payload.channels[0].datetime
+                };
+
+                iotAgentLib.logModule.info(context, JSON.stringify(query));
+
+                manageULRequest(query); 
+                break;
+
+            case 'location':
+                iotAgentLib.logModule.info(context,`location: ${data.datetime}`);
+                break;
+
+            case 'connection':
+                iotAgentLib.logModule.info(context,`connection: ${data.datetime} : is_online : ${payload.is_online}`);
+                break;
+
+            case 'keepalive':
+                iotAgentLib.logModule.debug(context, `keepalive: ${data.datetime}`);
+                break;
+        }
+
+    } catch (error) {
+        iotAgentLib.logModule.error(context, `Exception in ws: ${error.message}`);
+    }
+});
+
+function manageULRequest(query) {
+
+    iotAgentLib.retrieveDevice(query.i, query.k, function(error, device) {
+        if (error) {
+            iotAgentLib.logModule.error(context, 'Couldn\'t find the device: ' + JSON.stringify(error));
+        } else {
+            const values = parseUl(query.d, device, query.t);
+            iotAgentLib.update(device.name, device.type, '', values, device, function(error) {
+                if (error) {
+                    iotAgentLib.logModule.error(context, 'Error updating the device');             
+                } else {
+                    iotAgentLib.logModule.info(context, 'Device successfully updated');             
+                }        
+            });
+        }
+    });  
+}
+
+function parseUl(data, device, date) {
+    function findName(name) {
+        for (var i=0; i < device.active.length; i++) {
+            if (device.active[i].object_id === name) {
+                return device.active[i].name;
+            }
+        }
+
+        return null;
+    }
+
+    function findType(name) {
+        for (var i=0; i < device.active.length; i++) {
+            if (device.active[i].object_id === name) {
+                return device.active[i].type;
+            }
+        }
+
+        return null;
+    }
+
+    function createAttribute(elements) {
+        let pair = elements.split('|');
+        let attributes = [];
+
+        for (let i = 0; i < pair.length; i += 2 ) {
+            const type = findType(pair[i]);
+            let value = pair[i + 1];
+
+            const metadata = {
+                TimeInstant: {
+                    type: "DateTime",
+                    value: new Date(date)
+                }
+            }
+
+            if (type == 'Number') {
+                value = parseFloat(value);
+            }
+
+            attributes.push({
+                name: findName(pair[i]),
+                type: type,
+                value: value,
+                metadata: metadata
+            });
+        }
+
+        iotAgentLib.logModule.debug(context, JSON.stringify(attributes));
+        return attributes;
+    }
+
+    return createAttribute(data);
+}
+
+function start(newConfig, callback) {
+
+    iotAgentLib.activate(config, function(error) {
+        if (error) {
+            callback(error);
+        } else {
+            iotAgentLib.logModule.info('IoT Agent services activated');
+            initSouthbound(function (error) {
+                if (error) {
+                    iotAgentLib.logModule.error(context,
+                        'Could not initialize South' +
+                        'bound API due to the following error: %s', error);
+                } else {
+                    iotAgentLib.logModule.info(context,
+                        'South bound API started successfully');
+                }   
+            }); 
+            callback(error);
+        }
+    });
+}
+
+function stop(callback) {
+
+    iotAgentLib.logModule.info(context, 'Stopping IoT Agent');
+    async.series([
+        iotAgentLib.resetMiddlewares,
+        iotAgentLib.deactivate
+    ], callback);
+}
+
+exports.start = start;
+exports.stop = stop;

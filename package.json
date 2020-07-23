@@ -1,0 +1,36 @@
+{
+  "name": "custom-iotagent-sakuraio",
+  "version": "1.0.0",
+  "description": "",
+  "main": "bin/iotagent-sakuraio",
+  "bin": {
+    "custom-iotagent-sakuraio": "iotagent-sakuraio.js"
+  },
+  "directories": {
+    "example": "examples",
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lets-fiware/custom-iotagent-sakuraio.git"
+  },
+  "keywords": [
+    "FIWARE",
+    "'IoT",
+    "Agent'",
+    "sakura.io"
+  ],
+  "author": "Kazuhito Suda",
+  "license": "AGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/lets-fiware/custom-iotagent-sakuraio/issues"
+  },
+  "homepage": "https://github.com/lets-fiware/custom-iotagent-sakuraio#readme",
+  "dependencies": {
+    "iotagent-node-lib": "^2.12.0",
+    "ws": "^7.3.1"
+  }
+}
