@@ -134,11 +134,22 @@ The following is an decode routine.
 ```
 let hex = '';
 for (let i = 0; i < payload.channels.length; i++) {
+    if (payload.channels[i].channel == 0) {
+        hex = '';
+    }
     hex +=  payload.channels[i].value;
 }
 const bin = Uint8Array.from(Buffer.from(hex, "hex"));
 const index = bin.indexOf(0);
-const ul = new TextDecoder().decode((index == -1) ? bin : bin.subarray(0, index));
+let ul = new TextDecoder().decode((index == -1) ? bin : bin.subarray(0, index));
+
+iotAgentLib.logModule.debug(context,`${ul}`);
+
+if (ul.slice(0 ,1) != ul.slice(-1)) {
+    iotAgentLib.logModule.error(context,`Data integrity error: ${ul}`);
+    return;
+}
+ul = ul.slice(1).slice(0, -1);
 
 const query = {
     i : data.module,                    // device ID
