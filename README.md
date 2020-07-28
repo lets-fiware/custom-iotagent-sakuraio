@@ -47,26 +47,30 @@ The custom IoT Agent for sakura.io supports the following measure payload syntax
 key-value pairs separated by the `|` character. E.g.:
 
 ```
-t|33.84|h|36.12|p|1005.75
+t|32.63|h|34.44|p|1001.49
 ```
 
 ### Make a custom payload on an IoT device
 
-An IoT Device makes custom payload that is concatenated an `api key` and a UltraLight payload with `?` as shown:
+An IoT Device makes a custom payload as shown:
 
 ```
-1234?t|33.84|h|36.12|p|1005.75
+A1234?t|32.63|h|34.44|p|1001.49A
 ```
 
-The sakura.io channels have multiple channels. The channel can be stored 8 bytes of hex data so that a payload is
+An IoT Device makes a custom payload. It is concatenated an `api key` and a UltraLight payload with `?` 
+and it is added a header and a trailer to confirm the integrity of data and to indicate which is an attribute type.
+A 'A' indicates an active attribute.
+
+The sakura.io channels has multiple channels. The channel can be stored 8 bytes of hex data so that a payload is
 divided into 8 bytes as shown:
 
-| Custom payload    | sakura.io channels | hex              |
-| ----------------- | ------------------ | ---------------- |
-| 1234?t\|3         | channel 0          | 313233343f747c33 |
-| 3.84\|h\|3        | channel 1          | 332e38347c687c33 |
-| 6.12\|p\|1        | channel 2          | 362e31327c707c31 |
-| 005.75            | channel 3          | 3030352e3735     |
+| Custom payload | sakura.io channels | hex              |
+| -------------- | ------------------ | ---------------- |
+| A1234?t\|      | channel 0          | 41313233343f747c |
+| 32.63\|h\|     | channel 1          | 33322e36337c687c |
+| 34.44\|p\|     | channel 2          | 33342e34347c707c |
+| 1001.49A       | channel 3          | 313030312e343941 |
 
 The following is an encode routine run in an IoT device.
 
@@ -76,7 +80,7 @@ temperature = bme280.get_temperature()
 pressure = bme280.get_pressure()
 humidity = bme280.get_humidity()
 
-measures = '{}?t|{:05.2f}|h|{:05.2f}|p|{:05.2f}'.format(key, temperature, humidity, pressure)
+measures = 'A{}?t|{:05.2f}|h|{:05.2f}|p|{:05.2f}A'.format(key, temperature, humidity, pressure)
 
 for i in range(math.ceil(len(measures) / 8)):
     sakuraio.enqueue_tx(i, measures[i * 8:i * 8 + 8])
@@ -91,32 +95,32 @@ The IoT Agent receives the following JSON data from the sakura.io platform as sh
 {
   "module": "xCr8vqsJ0Zbe",
   "type": "channels",
-  "datetime": "2020-07-21T11:58:35.824017866Z",
+  "datetime": "2020-07-28T08:09:49.266964572Z",
   "payload": {
     "channels": [
       {
         "channel": 0,
         "type": "b",
-        "value": "313233343f747c33",
-        "datetime": "2020-07-21T11:58:35.726018871Z"
+        "value": "41313233343f747c",
+        "datetime": "2020-07-28T08:09:49.167965338Z"
       },
       {
         "channel": 1,
         "type": "b",
-        "value": "332e38347c687c33",
-        "datetime": "2020-07-21T11:58:35.751018871Z"
+        "value": "33322e36337c687c",
+        "datetime": "2020-07-28T08:09:49.192965338Z"
       },
       {
         "channel": 2,
         "type": "b",
-        "value": "362e31327c707c31",
-        "datetime    ": "2020-07-21T11:58:35.776018871Z"
+        "value": "33342e34347c707c",
+        "datetime": "2020-07-28T08:09:49.217965338Z"
       },
       {
         "channel": 3,
         "type": "b",
-        "value": "3030352e37350000",
-        "datetime": "2020-07-21T11:58:35.800018871Z"
+        "value": "313030312e343941",
+        "datetime": "2020-07-28T08:09:49.242965338Z"
       }
     ]
   }
@@ -150,8 +154,8 @@ As a result, the following data can be retrieved from the JSON data.
 {
   "i": "xCr8vqsJ0Zbe",
   "k": "1234",
-  "d": "t|33.84|h|36.12|p|1005.75",
-  "t": "2020-07-21T11:58:35.726018871Z"
+  "d": "t|32.63|h|34.44|p|1001.49",
+  "t": "2020-07-28T08:09:49.167965338Z"
 }
 ```
 
@@ -162,33 +166,33 @@ Finally, the IoT Agent calls the parseUl function to parse UltaLight payload and
   {
     "name": "temperature",
     "type": "Number",
-    "value": 33.84,
+    "value": 32.63,
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2020-07-21T11:58:35.726Z"
+        "value": "2020-07-28T08:09:49.167Z"
       }
     }
   },
   {
     "name": "relativeHumidity",
     "type": "Number",
-    "value": 36.12,
+    "value": 34.44,
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2020-07-21T11:58:35.726Z"
+        "value": "2020-07-28T08:09:49.167Z"
       }
     }
   },
   {
     "name": "atmosphericPressure",
     "type": "Number",
-    "value": 1005.75,
+    "value": 1001.49,
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2020-07-21T11:58:35.726Z"
+        "value": "2020-07-28T08:09:49.167Z"
       }
     }
   }
@@ -277,7 +281,7 @@ The source code of the IoT device that supports this IoT Agent is [here](https:/
 ## About sakura.io
 
 [SAKURA internet Inc.](https://www.sakura.ad.jp/en/corporate/) is a provider of internet infrastructures in Japan.
-They provides [sakura.io service](https://sakura.io/). It's composed the sakura.io platform and communication module.
+They provides [sakura.io service](https://sakura.io/). It's composed of the sakura.io platform and communication module.
 The communication module supports 4G-LTE data communication and it can be attached on Raspberry Pi, Arduino and so on.
 
 ![](https://github.com/lets-fiware/custom-iotagent-sakuraio/blob/gh-pages/images/sakuraio-module-on-raspberrypi-non-free.png)
