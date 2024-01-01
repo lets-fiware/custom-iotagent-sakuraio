@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2023 Kazuhito Suda
+ * Copyright (c) 2020-2024 Kazuhito Suda
  *
  * This file is part of custom-iotagent-sakuraio
  *
