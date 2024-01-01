@@ -313,5 +313,5 @@ The following third-party library is used under license:
 
 ## Copyright and License
 
-Copyright (c) 2020-2023 Kazuhito Suda<br>
+Copyright (c) 2020-2024 Kazuhito Suda<br>
 Custom IoT Agent for sakura.io is licensed under [Affero General Public License (GPL) version 3](./LICENSE).
